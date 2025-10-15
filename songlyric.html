@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About you — Lyric Display</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #fce4ec, #e0f7fa, #d7ccc8);
+      font-family: 'Helvetica Neue', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .lyrics-container {
+      width: 80%;
+      max-width: 640px;
+      text-align: center;
+      font-size: 1.3rem;
+      line-height: 1.8;
+      position: relative;
+      z-index: 2;
+    }
+
+    .line {
+      opacity: 0;
+      transition: opacity 1s, color 1s;
+    }
+    .line.active {
+      opacity: 1;
+      color: #ff99cc;
+    }
+    .line.past {
+      opacity: 0.5;
+      color: #6a4c4c;
+    }
+
+    /* Falling stars & flowers */
+    .falling {
+      position: absolute;
+      top: -50px;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      animation: fall linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Lyrics -->
+  <div class="lyrics-container" id="lyrics">
+    <div class="line">There was something about you that now I can't remember</div>
+    <div class="line">It's the same damn thing that made my heart surrender</div>
+    <div class="line">and I'll miss you on the train</div>
+    <div class="line">I'll miss you in the morning</div>
+    <div class="line">I never know what to think about</div>
+    <div class="line">I think about you</div>
+  </div>
+
+  <!-- Hidden YouTube video -->
+  <div id="player" style="display:none;"></div>
+
+  <script>
+    // Lyrics line animation
+    const lines = document.querySelectorAll('.line');
+    let current = 0;
+    function showNextLine() {
+      if (current > 0) {
+        lines[current - 1].classList.add('past');
+        lines[current - 1].classList.remove('active');
+      }
+      if (current < lines.length) {
+        lines[current].classList.add('active');
+      }
+      current++;
+      if (current <= lines.length) {
+        setTimeout(showNextLine, 3000); // 3 seconds per line
+      }
+    }
+    window.onload = showNextLine;
+
+    // Falling stars & flowers
+    const body = document.body;
+    function createFallingElement() {
+      const el = document.createElement('div');
+      el.classList.add('falling');
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.width = el.style.height = (Math.random() * 15 + 10) + 'px';
+      el.style.background = Math.random() > 0.5 ? 'gray' : 'lightblue';
+      el.style.borderRadius = '50%';
+      el.style.animationDuration = (Math.random() * 5 + 5) + 's';
+      body.appendChild(el);
+      setTimeout(() => el.remove(), 10000);
+    }
+    setInterval(createFallingElement, 300);
+
+    // Load YouTube IFrame API
+    let tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
+    let player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '0',
+        width: '0',
+        videoId: 'mtxURzo8108', // Your video ID
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          loop: 1,
+          playlist: 'mtxURzo8108', // loop requires playlist
+          mute: 1
+        },
+        events: {
+          onReady: function(event) {
+            event.target.playVideo();
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
