@@ -3,53 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About you — Lyric Display</title>
+  <title>Synced Dreamy Lyrics</title>
+
+  <!-- Dreamy Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: #f5f5f5; /* light gray */
-      font-family: 'Helvetica Neue', sans-serif;
+      background: #808080; /* Solid grey */
+      font-family: 'Great Vibes', cursive;
       overflow: hidden;
       height: 100vh;
-      color: #333;
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
+      position: relative;
     }
 
     .lyrics-container {
       width: 80%;
       max-width: 640px;
       text-align: center;
-      font-size: 1.3rem;
-      line-height: 1.8;
+      font-size: 2rem;
+      line-height: 2;
       position: relative;
       z-index: 2;
+      display: none; /* Hidden until play */
     }
 
     .line {
       opacity: 0;
-      transition: opacity 1s, color 1s;
+      transition: opacity 1.5s ease-in-out;
     }
 
     .line.active {
       opacity: 1;
-      color: #ff99cc;
+      color: #ffccff;
     }
 
-    .line.past {
-      opacity: 0.5;
-      color: #6a4c4c;
+    .line.fade-out {
+      opacity: 0;
+      transition: opacity 2s ease-in-out;
     }
 
-    /* Falling flakes */
     .falling {
       position: absolute;
       top: -50px;
-      width: 20px;
-      height: 20px;
       pointer-events: none;
       animation: fall linear infinite;
       z-index: 1;
@@ -63,30 +66,34 @@
       }
     }
 
-    /* Play button */
     #playBtn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      font-size: 1rem;
+      padding: 15px 30px;
+      font-size: 1.5rem;
       background-color: #ff99cc;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      z-index: 3;
       color: white;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 3;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
     #playBtn:hover {
       background-color: #e688b6;
     }
+
+    .centered {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   </style>
 </head>
 <body>
-  <!-- Play Music Button -->
-  <button id="playBtn">Play Music</button>
+
+  <!-- Play Button -->
+  <button id="playBtn" class="centered">Play Music</button>
 
   <!-- Lyrics -->
   <div class="lyrics-container" id="lyrics">
@@ -98,78 +105,87 @@
     <div class="line">I think about you</div>
   </div>
 
-  <!-- Hidden YouTube video -->
-  <div id="player" style="display:none;"></div>
+  <!-- YouTube Player -->
+  <div id="player" style="display: none;"></div>
 
   <script>
-    // Lyrics animation
     const lines = document.querySelectorAll('.line');
-    let current = 0;
-    function showNextLine() {
-      if (current > 0) {
-        lines[current - 1].classList.add('past');
-        lines[current - 1].classList.remove('active');
-      }
-      if (current < lines.length) {
-        lines[current].classList.add('active');
-      }
-      current++;
-      if (current <= lines.length) {
-        setTimeout(showNextLine, 3000); // 3s per line
-      }
-    }
-    window.onload = showNextLine;
+    const lyricsContainer = document.getElementById('lyrics');
+    const playBtn = document.getElementById('playBtn');
 
-    // Falling flakes
-    const body = document.body;
-    function createFallingElement() {
-      const el = document.createElement('div');
-      el.classList.add('falling');
-      el.style.left = Math.random() * 100 + 'vw';
-      const size = Math.random() * 15 + 10;
-      el.style.width = el.style.height = size + 'px';
-
-      const colors = ['#ffffff', '#87cefa', '#ffb6c1']; // white, light blue, pink
-      el.style.background = colors[Math.floor(Math.random() * colors.length)];
-      el.style.animationDuration = (Math.random() * 5 + 5) + 's';
-
-      body.appendChild(el);
-      setTimeout(() => el.remove(), 10000);
-    }
-    setInterval(createFallingElement, 300);
-
-    // YouTube player
-    let tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    // Set when each lyric line should appear (in seconds)
+    const timings = [2, 6, 10, 14, 18, 22];
+    const displayDuration = 3000; // how long each line stays (ms)
 
     let player;
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
         height: '0',
         width: '0',
-        videoId: 'mtxURzo8108', // Replace with your desired video
+        videoId: 'mtxURzo8108', // Replace with your desired video ID
         playerVars: {
           autoplay: 0,
           controls: 0,
           loop: 1,
-          playlist: 'mtxURzo8108' // Needed for loop to work
+          playlist: 'mtxURzo8108'
         },
         events: {
-          onReady: function (event) {
-            // Do nothing until user clicks Play
+          onReady: function () {
+            playBtn.disabled = false;
           }
         }
       });
     }
 
-    // Unmute and play on user click
-    document.getElementById('playBtn').addEventListener('click', () => {
+    // Sync lyrics to song timing
+    function syncLyrics() {
+      lyricsContainer.style.display = 'block';
+      timings.forEach((time, index) => {
+        setTimeout(() => {
+          if (index > 0) {
+            lines[index - 1].classList.add('fade-out');
+            lines[index - 1].classList.remove('active');
+          }
+          lines[index].classList.add('active');
+          lines[index].classList.remove('fade-out');
+        }, time * 1000);
+
+        setTimeout(() => {
+          lines[index].classList.add('fade-out');
+          lines[index].classList.remove('active');
+        }, (time * 1000) + displayDuration);
+      });
+    }
+
+    // Play button click
+    playBtn.addEventListener('click', () => {
       if (player && typeof player.playVideo === 'function') {
+        playBtn.style.display = 'none';
         player.unMute();
         player.playVideo();
+        syncLyrics();
       }
     });
+
+    // Falling flakes
+    function createFallingElement() {
+      const el = document.createElement('div');
+      el.classList.add('falling');
+      el.style.left = Math.random() * 100 + 'vw';
+      const size = Math.random() * 15 + 10;
+      el.style.width = el.style.height = size + 'px';
+      const colors = ['#ffffff', '#87cefa', '#ffb6c1'];
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animationDuration = (Math.random() * 5 + 5) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 10000);
+    }
+    setInterval(createFallingElement, 300);
+
+    // Load YouTube API
+    let tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
   </script>
 </body>
 </html>
